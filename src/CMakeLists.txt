@@ -1,5 +1,19 @@
-add_subdirectory(hello_world)
+find_package(fmt REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(glad REQUIRED)
+find_package(spdlog REQUIRED)
 
+add_library(wrappers_IMPL STATIC Shader.cpp Window.cpp Cube.cpp Ubo.cpp)
+target_link_libraries(wrappers_IMPL PUBLIC wrappers_INC)
+target_link_system_libraries(wrappers_IMPL
+  PRIVATE
+		fmt::fmt
+    glad::glad
+    glfw::glfw
+    SHCONFIG
+)
+
+# MAIN EXE
 add_executable(${PROJECT_NAME} 
   main.cpp
 )
@@ -8,8 +22,18 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE 
     project_options
     project_warnings
-    hello_world_IMPL
+    wrappers_IMPL
+    SHCONFIG
 )
+
+target_link_system_libraries(${PROJECT_NAME}
+  PRIVATE 
+    fmt::fmt
+    spdlog::spdlog
+    linmath
+)
+
+add_dependencies(${PROJECT_NAME} compile_and_copy_shaders_bin)
 
 target_include_directories(${PROJECT_NAME} 
   PRIVATE 

@@ -1,0 +1,18 @@
+BIN_DIR = bin
+SRC_DIR = src
+
+GLSL_OPT = spirv-opt
+GLSL_OPT_FLAGS = -O
+GLSL = glslangValidator
+GLSL_FLAGS = -G -V
+
+rule glsl
+  command = $GLSL $GLSL_FLAGS $in -o $out && $GLSL_OPT $GLSL_OPT_FLAGS $out -o $out
+
+rule mkdir
+  command = mkdir -p $out
+
+build $BIN_DIR: mkdir
+
+build $BIN_DIR/vert.spv: glsl $SRC_DIR/shader.vert | $BIN_DIR
+build $BIN_DIR/frag.spv: glsl $SRC_DIR/shader.frag | $BIN_DIR

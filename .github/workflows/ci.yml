@@ -1,3 +1,4 @@
+
 name: ci
 
 on:
@@ -14,42 +15,19 @@ env:
   CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
 
 jobs:
-  build-test: 
+  build-test:
     runs-on: ${{ matrix.os }}
     strategy: 
       fail-fast: false
-      matrix: # { win + [clang,msvc], unix + [clang,gcc], macos + [clang] }
+      matrix: # { win + [clang], unix + [clang] }
         os: 
           - windows-2022
           - windows-2019
-          - ubuntu-20.04
-          - macos-11
+          - ubuntu-22.04
         compiler:
           - llvm-14.0.0
-          - gcc-11
         generator:
           - Ninja
-        include:
-          - compiler: gcc-11
-            gcov_exe: gcov
-          - compiler: llvm-14.0.0
-            gcov_exe: "llvm-cov gcov"
-          - os: windows-2022
-            compiler: msvc
-            generator: 'Visual Studio 17 2022'
-          - os: windows-2019
-            compiler: msvc
-            generator: 'Visual Studio 16 2019'
-        exclude:
-          - os: windows-2022
-            compiler: gcc-11
-            generator: Ninja
-          - os: windows-2019
-            compiler: gcc-11
-            generator: Ninja
-          - os: macos-11
-            compiler: gcc-11
-            generator: Ninja
 
     steps:
       - uses: actions/checkout@v3
@@ -71,50 +49,22 @@ jobs:
           cmake: true
           ninja: true
           conan: true 
-          clangtidy: true
+          clangtidy: 14.0.0
           ccache: true
-          gcovr: true
-          opencppcoverage: true
 
       - name: Cleanup Conan system packages (they are not properly cached)
         run: conan remove -f '*/system'
 
+      - name: ubuntu madness
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get install -y libgl-dev pkg-config libx11-xcb-dev libfontenc-dev libice-dev libsm-dev libxaw7-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbfile-dev libxmu-dev libxmuu-dev libxpm-dev libxrandr-dev libxrender-dev libxres-dev libxss-dev libxt-dev libxtst-dev libxv-dev libxvmc-dev libxxf86vm-dev libxcb-render0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev libxcb-util-dev libxcb-util0-dev uuid-dev
       - name: configure project
         run: |
-          cmake -S . -B ./build -G "${{ matrix.generator }}" -DGIT_SHA:STRING=${{github.sha}} -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON
-     
+          cmake -S . -B ./build -G "${{ matrix.generator }}" -DGIT_SHA:STRING=${{github.sha}} -DCMAKE_BUILD_TYPE=Release -DREMOTE_BUILD=ON
       - name: build project
         run: cmake --build ./build
 
-      - name: run CTest and coverage (Unix)
-        if: runner.os != 'Windows'
-        working-directory: ./build
-        run: |
-          ctest --verbose
-          gcovr --delete --root ../ --print-summary --xml-pretty --xml coverage.xml . --gcov-executable '${{ matrix.gcov_exe }}'
-
-      - name: run CTest and coverage (Windows)
-        if: runner.os == 'Windows'
-        working-directory: ./build
-        run: |
-          OpenCppCoverage.exe --export_type cobertura:coverage.xml --cover_children -- ctest -C Debug --verbose
-
-      - name: configure Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          directory: build
-          files: coverage.xml
-          name: codecov-umbrella
-          verbose: true
-
-      - name: configure release
-        if: startsWith(github.ref, 'refs/tags') 
-        run: cmake -S . -B ./build -G "${{ matrix.generator }}" -DGIT_SHA:STRING=${{github.sha}} -DCMAKE_BUILD_TYPE=Release
-
-      - name: build project release
-        if: startsWith(github.ref, 'refs/tags')
-        run: cmake --build ./build
-      
       - name: cpack project
         if: startsWith(github.ref, 'refs/tags')
         working-directory: ./build
@@ -124,5 +74,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
         uses: softprops/action-gh-release@v1
         with:
-          files: ./build/*
-
+          files: ./build/*.zip

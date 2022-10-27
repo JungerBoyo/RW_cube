@@ -1,5 +1,4 @@
 build*/
 .vscode/
 *.code-workspace
-format_code.bash
 .conanprofile
