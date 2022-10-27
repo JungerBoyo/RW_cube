@@ -9,18 +9,20 @@
 using namespace rw_cube;
 
 struct Window::WinNative {
-    GLFWwindow* value{ nullptr };
+	GLFWwindow *value{nullptr};
 };
 
-Window::Window(std::string_view title, int w, int h, 
-	void(*win_error_callback)(int, const char*),
-	void(*gl_error_callback)(std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t, int, const char*, const void*))
+Window::Window(std::string_view title, int w, int h,
+			   void (*win_error_callback)(int, const char *),
+			   void (*gl_error_callback)(std::uint32_t, std::uint32_t,
+										 std::uint32_t, std::uint32_t, int,
+										 const char *, const void *))
 	: win_handle_(std::make_shared<WinNative>()) {
 
-    /// GLFW INIT
-    if (glfwInit() != GLFW_TRUE) {
-        throw std::runtime_error("glfw init failed");
-    }
+	/// GLFW INIT
+	if (glfwInit() != GLFW_TRUE) {
+		throw std::runtime_error("glfw init failed");
+	}
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, SHCONFIG_GL_VERSION_MAJOR);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, SHCONFIG_GL_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -36,12 +38,15 @@ Window::Window(std::string_view title, int w, int h,
 	}
 
 	/// GLAD INIT
-	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) { // NOLINT
+	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) ==
+		0) { // NOLINT
 		throw std::runtime_error("glad loader failed");
 	}
 	if (gl_error_callback != nullptr) {
 		glEnable(GL_DEBUG_OUTPUT);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_TRUE);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE,
+							  GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr,
+							  GL_TRUE);
 		glDebugMessageCallback(gl_error_callback, nullptr);
 	}
 	glEnable(GL_DEPTH_TEST);
@@ -52,8 +57,8 @@ float Window::time() const {
 	return static_cast<float>(glfwGetTime());
 }
 std::pair<int, int> Window::size() const {
-	int w{ 0 };
-	int h{ 0 };
+	int w{0};
+	int h{0};
 	glfwGetWindowSize(win_handle_->value, &w, &h);
 	return {w, h};
 }
@@ -62,17 +67,17 @@ void Window::setViewport(int w, int h) const {
 }
 
 void Window::swapBuffers() const {
-    glfwSwapBuffers(win_handle_->value);
+	glfwSwapBuffers(win_handle_->value);
 }
 bool Window::shouldClose() const {
-    return glfwWindowShouldClose(win_handle_->value) != 0;
+	return glfwWindowShouldClose(win_handle_->value) != 0;
 }
 void Window::pollEvents() const {
-    glfwPollEvents();
+	glfwPollEvents();
 }
 
 void Window::deinit() {
-    glfwDestroyWindow(win_handle_->value);
+	glfwDestroyWindow(win_handle_->value);
 	win_handle_.reset();
-    glfwTerminate();
+	glfwTerminate();
 }

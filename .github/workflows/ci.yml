@@ -4,10 +4,6 @@ name: ci
 on:
   release:
     types: [published]
-  push:
-    tags:
-    branches:
-      - main
 
 env: 
   CONAN_SYSREQUIRES_MODE: enabled
@@ -15,7 +11,7 @@ env:
   CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan-cache/short"
 
 jobs:
-  build-test:
+  build:
     runs-on: ${{ matrix.os }}
     strategy: 
       fail-fast: false

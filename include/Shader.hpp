@@ -1,13 +1,13 @@
 #ifndef RW_CUBE_SHADER_HPP
 #define RW_CUBE_SHADER_HPP
 
-#include <cinttypes>
 #include <array>
-#include <vector>
+#include <cinttypes>
+#include <filesystem>
 #include <span>
 #include <string>
 #include <string_view>
-#include <filesystem>
+#include <vector>
 
 namespace rw_cube {
 
@@ -16,13 +16,13 @@ struct Shader {
 	std::array<std::uint32_t, 2> shader_ids_;
 
 	Shader(std::span<const std::filesystem::path> paths);
-	static std::vector<char> parse(const std::filesystem::path& path);
+	static std::vector<char> parse(const std::filesystem::path &path);
 
 	void bind() const;
 
 	void deinit();
 };
 
-}
+} // namespace rw_cube
 
 #endif
