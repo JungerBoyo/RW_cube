@@ -1,5 +1,7 @@
 #include "Cube.hpp"
 
+#include <random>
+
 #include <glad/glad.h>
 
 using namespace rw_cube;
@@ -9,9 +11,25 @@ Cube::Cube(std::uint32_t attrib_binding,
 	glCreateBuffers(1, &vbo_id_);
 
 	std::array<Vertex, INDICES.size()> vertices;
+	
+	std::array<float, 3> random_color{{0, 0, 0}};
+	std::mt19937 gen32{ static_cast<unsigned int>(time(nullptr)) }; // NOLINT
+	std::uniform_real_distribution<float> fdist(0.F, 1.F);
 	std::size_t i{0};
 	for (auto &vertex : vertices) {
-		vertex = VERTICES.at(static_cast<std::size_t>(INDICES.at(i++)));
+		if (i % 6 == 0) {
+			random_color[0] = fdist(gen32);
+			random_color[1] = fdist(gen32);
+			random_color[2] = fdist(gen32);
+		}
+
+		const auto VERTEX = VERTICES.at(static_cast<std::size_t>(INDICES.at(i++)));
+		vertex[0] = VERTEX[0];
+		vertex[1] = VERTEX[1];
+		vertex[2] = VERTEX[2];
+		vertex[3] = random_color[0];
+		vertex[4] = random_color[1];
+		vertex[5] = random_color[2];
 	}
 	glNamedBufferStorage(vbo_id_, sizeof(vertices), vertices.data(), 0);
 

@@ -38,14 +38,17 @@ Window::Window(std::string_view title, int w, int h,
 	}
 
 	/// GLAD INIT
-	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) ==
-		0) { // NOLINT
+	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == // NOLINT
+		0) {
 		throw std::runtime_error("glad loader failed");
 	}
 	if (gl_error_callback != nullptr) {
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE,
 							  GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr,
+							  GL_TRUE);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE,
+							  GL_DEBUG_SEVERITY_LOW, 0, nullptr,
 							  GL_TRUE);
 		glDebugMessageCallback(gl_error_callback, nullptr);
 	}

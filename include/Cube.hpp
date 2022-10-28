@@ -22,6 +22,7 @@ struct Cube {
 	std::uint32_t vbo_id_;
 	std::uint32_t vao_id_;
 	std::array<float, 3> rot_xyz_{{0.F, 0.F, 0.F}};
+	std::array<float, 3> pos_xyz_{{0.F, 0.F, 0.F}};
 
 	Cube(std::uint32_t attrib_binding,
 		 std::span<const AttribConfig> attrib_configs);
@@ -37,6 +38,12 @@ struct Cube {
 						  ? 0.F
 						  : rot_xyz_[2] + z;
 		return std::make_tuple(rot_xyz_[0], rot_xyz_[1], rot_xyz_[2]);
+	}
+	auto move(float x, float y, float z) {
+		pos_xyz_[0] += x;
+		pos_xyz_[1] += y;
+		pos_xyz_[2] += z;
+		return std::make_tuple(pos_xyz_[0], pos_xyz_[1], pos_xyz_[2]);
 	}
 	void bind() const;
 	void deinit();

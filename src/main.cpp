@@ -49,7 +49,7 @@ int main() {
 
 			// NOLINTBEGIN
 			mat4x4 proj_mat;
-			mat4x4_perspective(proj_mat, std::numbers::pi_v<float> / 2.f,
+			mat4x4_perspective(proj_mat, std::numbers::pi_v<float> / 4.f,
 							   static_cast<float>(w) / static_cast<float>(h),
 							   .1F, 100.F);
 
@@ -63,8 +63,13 @@ int main() {
 			const auto [x_angle, y_angle, z_angle] =
 				cube.rotate(x_rot, y_rot, z_rot);
 
+			const float x_mv = .2F * std::sin(y_angle) * timestep;
+			const float y_mv = .2F * std::cos(x_angle) * timestep;
+			const float z_mv = .2F * std::sin(z_angle) * timestep;
+			const auto [x_pos, y_pos, z_pos] = cube.move(x_mv, y_mv, z_mv);
+
 			mat4x4 model_mat;
-			mat4x4_translate(model_mat, 0.F, 0.F, -3.F);
+			mat4x4_translate(model_mat, 0.F + x_pos, 0.F + y_pos, -7.F + z_pos);
 			mat4x4_rotate_X(model_mat, model_mat, x_angle);
 			mat4x4_rotate_Y(model_mat, model_mat, y_angle);
 			mat4x4_rotate_Z(model_mat, model_mat, z_angle);
