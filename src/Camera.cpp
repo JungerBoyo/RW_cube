@@ -1,5 +1,7 @@
 #include "Camera.hpp"
 
+#include <cmath>
+
 using namespace rw_cube;
 
 auto wrap(auto value, auto abs_limit, auto wrap_to) {
@@ -108,13 +110,13 @@ void Camera::rotateXYPlane(float x_vec, float y_vec) {
     );
     negative_looking_direction_[0] =  
         // rot around Y in XZ plane (x value)             // scale by rot around X becuase vec len changed from x/z perspective
-        std::cos(negative_looking_direction_angles_[1]) * std::cos(negative_looking_direction_angles_[0]);
+        cos(negative_looking_direction_angles_[1]) * cos(negative_looking_direction_angles_[0]);
     negative_looking_direction_[1] =  
         // rot around X in Y(X/Z) plane (y value) 
-        std::sin(negative_looking_direction_angles_[0]);
+        sin(negative_looking_direction_angles_[0]);
     negative_looking_direction_[2] = 
         // rot around Y in XZ plane (z value)             // scale by rot around X becuase vec len changed from x/z perspective
-        std::sin(negative_looking_direction_angles_[1]) * std::cos(negative_looking_direction_angles_[0]);
+        sin(negative_looking_direction_angles_[1]) * cos(negative_looking_direction_angles_[0]);
     vec3_norm(negative_looking_direction_, negative_looking_direction_);
 }
 void Camera::move(float x_mv, float y_mv, float z_mv) {
