@@ -37,6 +37,8 @@ Window::Window(std::string_view title, int w, int h,
 		glfwSetErrorCallback(win_error_callback);
 	}
 
+	glfwSetInputMode(win_handle_->value, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
 	/// GLAD INIT
 	if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == // NOLINT
 		0) {
@@ -67,6 +69,19 @@ std::pair<int, int> Window::size() const {
 }
 void Window::setViewport(int w, int h) const {
 	glViewport(0, 0, w, h);
+}
+void Window::setWinUserDataPointer(void* ptr){
+	glfwSetWindowUserPointer(win_handle_->value, ptr);
+}
+template<>
+void Window::setKeyCallback<void, GLFWwindow*, int, int, int, int>
+(void(*key_callback)(GLFWwindow*, int, int, int, int)) {
+	glfwSetKeyCallback(win_handle_->value, key_callback);
+}
+template<>
+void Window::setMousePositionCallback<void, GLFWwindow*, double, double>
+(void(*mouse_position_callback)(GLFWwindow*, double, double)) {
+	glfwSetCursorPosCallback(win_handle_->value, mouse_position_callback);
 }
 
 void Window::swapBuffers() const {

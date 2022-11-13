@@ -442,7 +442,73 @@ LINMATH_H_FUNC void mat4x4_look_at(mat4x4 m, vec3 const eye, vec3 const center, 
 
 	mat4x4_translate_in_place(m, -eye[0], -eye[1], -eye[2]);
 }
-
+typedef vec3 mat3x3[3];
+LINMATH_H_FUNC void mat3x3_identity(mat3x3 M)
+{
+	int i, j;
+	for(i=0; i<3; ++i)
+		for(j=0; j<3; ++j)
+			M[i][j] = i==j ? 1.f : 0.f;
+}
+LINMATH_H_FUNC void mat3x3_dup(mat3x3 M, mat3x3 const N)
+{
+	int i;
+	for(i=0; i<3; ++i)
+		vec3_dup(M[i], N[i]);
+}
+LINMATH_H_FUNC void mat3x3_mul(mat3x3 M, mat3x3 const a, mat3x3 const b)
+{
+	mat3x3 temp;
+	int k, r, c;
+	for(c=0; c<3; ++c) for(r=0; r<3; ++r) {
+		temp[c][r] = 0.f;
+		for(k=0; k<3; ++k)
+			temp[c][r] += a[k][r] * b[c][k];
+	}
+	mat3x3_dup(M, temp);
+}
+LINMATH_H_FUNC void mat3x3_mul_vec3(vec3 r, mat3x3 const M, vec3 const v)
+{
+	int i, j;
+	for(j=0; j<3; ++j) {
+		r[j] = 0.f;
+		for(i=0; i<3; ++i)
+			r[j] += M[i][j] * v[i];
+	}
+}
+LINMATH_H_FUNC void mat3x3_rotate_X(mat3x3 Q, mat3x3 const M, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	mat3x3 R = {
+		{1.f, 0.f, 0.f},
+		{0.f,   c,   s},
+		{0.f,  -s,   c},
+	};
+	mat3x3_mul(Q, M, R);
+}
+LINMATH_H_FUNC void mat3x3_rotate_Y(mat3x3 Q, mat3x3 const M, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	mat3x3 R = {
+		{   c, 0.f,  -s},
+		{ 0.f, 1.f, 0.f},
+		{   s, 0.f,   c},
+	};
+	mat3x3_mul(Q, M, R);
+}
+LINMATH_H_FUNC void mat3x3_rotate_Z(mat3x3 Q, mat3x3 const M, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	mat3x3 R = {
+		{   c,   s, 0.f},
+		{  -s,   c, 0.f},
+		{ 0.f, 0.f, 1.f},
+	};
+	mat3x3_mul(Q, M, R);
+}
 typedef float quat[4];
 #define quat_add vec4_add
 #define quat_sub vec4_sub
@@ -464,6 +530,13 @@ LINMATH_H_FUNC void quat_mul(quat r, quat const p, quat const q)
 	vec3_scale(w, q, p[3]);
 	vec3_add(r, r, w);
 	r[3] = p[3]*q[3] - vec3_mul_inner(p, q);
+}
+LINMATH_H_FUNC void quat_mul_in_place(quat r, quat const p, quat const q)
+{
+	quat tmp_p = {p[0], p[1], p[2], p[3]};
+	quat tmp_q = {q[0], q[1], q[2], q[3]};
+
+	quat_mul(r, tmp_q, tmp_p);
 }
 LINMATH_H_FUNC void quat_conj(quat r, quat const q)
 {

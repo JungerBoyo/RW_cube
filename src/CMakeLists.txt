@@ -3,13 +3,13 @@ find_package(glfw3 REQUIRED)
 find_package(glad REQUIRED)
 find_package(spdlog REQUIRED)
 
-add_library(wrappers_IMPL STATIC Shader.cpp Window.cpp Cube.cpp Ubo.cpp)
+add_library(wrappers_IMPL STATIC Shader.cpp Window.cpp Cube.cpp Ubo.cpp Camera.cpp)
 target_link_libraries(wrappers_IMPL PUBLIC wrappers_INC)
 target_link_system_libraries(wrappers_IMPL
   PRIVATE
 		fmt::fmt
     glad::glad
-    glfw::glfw
+    linmath
     SHCONFIG
 )
 

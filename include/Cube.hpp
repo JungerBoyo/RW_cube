@@ -1,10 +1,10 @@
 #ifndef RW_CUBE_CUBE_HPP
 #define RW_CUBE_CUBE_HPP
 
-#include <algorithm>
 #include <array>
 #include <numbers>
 #include <span>
+#include <optional>
 
 #include <Shader.hpp>
 
@@ -12,7 +12,7 @@ namespace rw_cube {
 
 struct AttribConfig {
 	std::int32_t index;
-	std::int32_t size;
+	std::int32_t size_in_dwords;
 };
 
 struct Cube {
@@ -21,30 +21,23 @@ struct Cube {
 
 	std::uint32_t vbo_id_;
 	std::uint32_t vao_id_;
+	std::uint32_t instance_count_{ 1 };
 	std::array<float, 3> rot_xyz_{{0.F, 0.F, 0.F}};
 	std::array<float, 3> pos_xyz_{{0.F, 0.F, 0.F}};
 
-	Cube(std::uint32_t attrib_binding,
-		 std::span<const AttribConfig> attrib_configs);
+	Cube(
+		std::uint32_t attrib_binding, 
+		std::span<const AttribConfig> attrib_configs,
+		std::optional<std::uint32_t> instance_attrib_binding,
+		std::optional<std::span<const AttribConfig>> instance_attrib_configs,
+		const void* instance_data,
+		std::uint32_t instance_data_size
+	);
 	void draw() const;
-	auto rotate(float x, float y, float z) {
-		rot_xyz_[0] = rot_xyz_[0] + x > 2.F * std::numbers::pi_v<float>
-						  ? 0.F
-						  : rot_xyz_[0] + x;
-		rot_xyz_[1] = rot_xyz_[1] + y > 2.F * std::numbers::pi_v<float>
-						  ? 0.F
-						  : rot_xyz_[1] + y;
-		rot_xyz_[2] = rot_xyz_[2] + z > 2.F * std::numbers::pi_v<float>
-						  ? 0.F
-						  : rot_xyz_[2] + z;
-		return std::make_tuple(rot_xyz_[0], rot_xyz_[1], rot_xyz_[2]);
-	}
-	auto move(float x, float y, float z) {
-		pos_xyz_[0] += x;
-		pos_xyz_[1] += y;
-		pos_xyz_[2] += z;
-		return std::make_tuple(pos_xyz_[0], pos_xyz_[1], pos_xyz_[2]);
-	}
+
+	std::tuple<float, float, float> rotate(float x, float y, float z);
+	std::tuple<float, float, float> move(float x, float y, float z);
+
 	void bind() const;
 	void deinit();
 };

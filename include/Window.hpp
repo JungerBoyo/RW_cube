@@ -18,7 +18,16 @@ struct Window {
 
 	[[nodiscard]] std::pair<int, int> size() const;
 	[[nodiscard]] float time() const;
+
 	void setViewport(int w, int h) const;
+	void setWinUserDataPointer(void* ptr);
+
+	template<typename R, typename ...Args>
+	void setKeyCallback(R(*key_callback)(Args...));
+
+	template<typename R, typename ...Args>
+	void setMousePositionCallback(R(*mouse_position_callback)(Args...));
+
 	void swapBuffers() const;
 	bool shouldClose() const;
 	void pollEvents() const;
@@ -27,5 +36,7 @@ struct Window {
 };
 
 } // namespace rw_cube
+
+#include "Window.tpp"
 
 #endif
