@@ -3,7 +3,7 @@ find_package(glfw3 REQUIRED)
 find_package(glad REQUIRED)
 find_package(spdlog REQUIRED)
 
-add_library(wrappers_IMPL STATIC Shader.cpp Window.cpp Cube.cpp Ubo.cpp Camera.cpp)
+add_library(wrappers_IMPL STATIC Shader.cpp Window.cpp Cube.cpp Ubo.cpp Camera.cpp CubeTexture.cpp)
 target_link_libraries(wrappers_IMPL PUBLIC wrappers_INC)
 target_link_system_libraries(wrappers_IMPL
   PRIVATE
@@ -28,12 +28,13 @@ target_link_libraries(${PROJECT_NAME}
 
 target_link_system_libraries(${PROJECT_NAME}
   PRIVATE 
+    glad::glad
     fmt::fmt
     spdlog::spdlog
     linmath
 )
 
-add_dependencies(${PROJECT_NAME} compile_and_copy_shaders_bin)
+add_dependencies(${PROJECT_NAME} compile_and_copy_shaders_dirs)
 
 target_include_directories(${PROJECT_NAME} 
   PRIVATE 

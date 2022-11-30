@@ -4,7 +4,6 @@
 #include <array>
 #include <cinttypes>
 #include <filesystem>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,8 +14,9 @@ struct Shader {
 	std::uint32_t prog_id_;
 	std::array<std::uint32_t, 2> shader_ids_;
 
-	Shader(std::span<const std::filesystem::path> paths);
-	static std::vector<char> parse(const std::filesystem::path &path);
+	Shader(bool is_spirv, const std::vector<std::filesystem::path>& paths);
+	static std::vector<char> parseAsSpirv(const std::filesystem::path &path);
+	static void compileShader(const std::filesystem::path &path, std::uint32_t shader_id);
 
 	void bind() const;
 

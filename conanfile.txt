@@ -1,6 +1,7 @@
 [requires]
 glfw/3.3.8
 glad/0.1.36
+lodepng/cci.20200615
 spdlog/1.10.0
 fmt/8.1.1
 

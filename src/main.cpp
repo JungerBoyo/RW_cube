@@ -8,6 +8,7 @@
 #include <numbers>
 
 #include <fmt/format.h>
+#include <glad/glad.h>
 #include <linmath.h>
 #include <spdlog/spdlog.h>
 
@@ -19,6 +20,16 @@ struct WinData {
 	float prev_mouse_y_position{ 0.F };
 	float timestep{ 0.F };
 	float fov{ std::numbers::pi_v<float>/4.F };
+	bool light_move_mode{ false };
+	float* light_pos;
+};
+
+struct UboData {
+    mat4x4 vp;
+    mat4x4 m_position;
+    vec3 light_pos;
+    float ambient_light;
+	vec3 camera_pos;
 };
 
 int main() {
@@ -37,12 +48,9 @@ int main() {
 			},
 		};
 
-		/*
-
-		*/
-
 		Camera camera;
-		WinData win_data = {.camera = camera };
+		UboData ubo_data{ .light_pos = {3.5F, 0.F, 5.F}, .ambient_light = 0.2F};
+		WinData win_data = {.camera = camera, .light_pos = ubo_data.light_pos};
 		win.setWinUserDataPointer(static_cast<void*>(&win_data));
 		win.setKeyCallback(+[](GLFWwindow* win_handle, int key, int, int action, int) {
 			if (action == GLFW_PRESS or action == GLFW_REPEAT) {
@@ -54,15 +62,48 @@ int main() {
 				static constexpr auto fov_low_lim{ 10.F/180.F * std::numbers::pi_v<float> };
 				static constexpr auto fov_high_lim{ 120.F/180.F * std::numbers::pi_v<float> };
 				switch (key) {
-				case GLFW_KEY_W: camera.move( 0.F, 0.F, step * timestep); break;
-				case GLFW_KEY_A: camera.move(-step * timestep, 0.F, 0.F); break;
-				case GLFW_KEY_S: camera.move( 0.F, 0.F,-step * timestep); break;
-				case GLFW_KEY_D: camera.move( step * timestep, 0.F, 0.F); break;
+				case GLFW_KEY_W: 
+						if (!win_data_ptr->light_move_mode) {
+							camera.move(0.F, 0.F, step * timestep); 
+						} else {
+							win_data_ptr->light_pos[2] += step * timestep;
+						}
+					break;
+				case GLFW_KEY_A: 
+						if  (!win_data_ptr->light_move_mode) {
+							camera.move(-step * timestep, 0.F, 0.F); break;
+						} else {
+							win_data_ptr->light_pos[0] += step * timestep;
+						}
+					break;
+				case GLFW_KEY_S: 
+						if  (!win_data_ptr->light_move_mode) {
+							camera.move(0.F, 0.F,-step * timestep); 
+						} else {
+							win_data_ptr->light_pos[2] -= step * timestep;
+						}
+					break;
+				case GLFW_KEY_D: 
+						if  (!win_data_ptr->light_move_mode) {
+							camera.move(step * timestep, 0.F, 0.F); 
+						} else {
+							win_data_ptr->light_pos[0] -= step * timestep;
+						}
+					break;
+				case GLFW_KEY_SPACE:
+						win_data_ptr->light_pos[1] += step * timestep;
+					break;
+				case GLFW_KEY_C:
+						win_data_ptr->light_pos[1] -= step * timestep;
+					break;
 				case GLFW_KEY_K: 
 						win_data_ptr->fov = std::clamp(win_data_ptr->fov - fov_step, fov_low_lim, fov_high_lim);
 					break;
 				case GLFW_KEY_J: 
 						win_data_ptr->fov = std::clamp(win_data_ptr->fov + fov_step, fov_low_lim, fov_high_lim);
+					break;
+				case GLFW_KEY_L:
+						win_data_ptr->light_move_mode = !win_data_ptr->light_move_mode;
 					break;
 				case GLFW_KEY_Q: glfwSetWindowShouldClose(win_handle, GLFW_TRUE); break;
 				default: break;
@@ -90,42 +131,54 @@ int main() {
 			camera.rotateXYPlane(timestep * step * x_step, timestep * step * y_step);
 		});
 
-		const std::array<std::filesystem::path, 2> shbin_paths{
-			{"shaders/bin/vert.spv", "shaders/bin/frag.spv"}};
-		Shader sh(shbin_paths);
+		int ext_num{0};
+		bool is_arb_spirv_supported{false};
+		glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
+		for (int i{0}; i<ext_num; ++i) {
+			const auto ext_str = std::string_view(reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i)));
+			if (ext_str == "GL_ARB_gl_spirv") {
+				is_arb_spirv_supported = true;
+				break;
+			}
+		}
 
-		constexpr std::array<AttribConfig, 2> attrib_configs{
-			{{SHCONFIG_IN_POSITION_LOCATION, 3},
-			 {SHCONFIG_IN_COLOR_LOCATION, 3}}};
-		constexpr std::array<AttribConfig, 1> instance_attrib_configs{
-			{{SHCONFIG_IN_OFFSET_LOCATION, 3}}
-		};
-		constexpr std::array<float, static_cast<std::size_t>(19U * 3U)> instance_data{{
-			 0.F, 0.F, 0.F,
-			 2.F, 0.F, 0.F,
-			-2.F, 0.F, 0.F,
-			 0.F, 0.F, 2.F,
-			 0.F, 0.F,-2.F,
-			 0.F, 2.F, 0.F,
-			 0.F,-2.F, 0.F,
-			 4.F, 0.F, 0.F,
-			-4.F, 0.F, 0.F,
-			 0.F, 0.F, 4.F,
-			 0.F, 0.F,-4.F,
-			 0.F, 4.F, 0.F,
-			 0.F,-4.F, 0.F,
-			 6.F, 0.F, 0.F,
-			-6.F, 0.F, 0.F,
-			 0.F, 0.F, 6.F,
-			 0.F, 0.F,-6.F,
-			 0.F, 6.F, 0.F,
-			 0.F,-6.F, 0.F,
-		}};
-		Cube cube(0U, attrib_configs, 1U, instance_attrib_configs, instance_data.data(), sizeof(instance_data));
+		Cube cube(
+			0U, 
+			{
+				{SHCONFIG_IN_POSITION_LOCATION, 3},
+				{SHCONFIG_IN_TEXCOORD_LOCATION, 3},
+				{SHCONFIG_IN_NORMAL_LOCATION, 3}
+			}, 
+			{
+				Shader(is_arb_spirv_supported, {
+					is_arb_spirv_supported ? "shaders/bin/diffuse_shader/vert.spv" : "shaders/src/diffuse_shader/shader.vert", 
+					is_arb_spirv_supported ? "shaders/bin/diffuse_shader/frag.spv" : "shaders/src/diffuse_shader/shader.frag"
+				}),
+				Shader(is_arb_spirv_supported, {
+					is_arb_spirv_supported ? "shaders/bin/light_source_shader/vert.spv" : "shaders/src/light_source_shader/shader.vert", 
+					is_arb_spirv_supported ? "shaders/bin/light_source_shader/frag.spv" : "shaders/src/light_source_shader/shader.frag"
+				}),
+				Shader(is_arb_spirv_supported, {
+					is_arb_spirv_supported ? "shaders/bin/specular_shader/vert.spv" : "shaders/src/specular_shader/shader.vert", 
+					is_arb_spirv_supported ? "shaders/bin/specular_shader/frag.spv" : "shaders/src/specular_shader/shader.frag"
+				}),
+				Shader(is_arb_spirv_supported, {
+					is_arb_spirv_supported ? "shaders/bin/phong_shader/vert.spv" : "shaders/src/phong_shader/shader.vert", 
+					is_arb_spirv_supported ? "shaders/bin/phong_shader/frag.spv" : "shaders/src/phong_shader/shader.frag"
+				}),
+				Shader(is_arb_spirv_supported, {
+					is_arb_spirv_supported ? "shaders/bin/texture_shader/vert.spv" : "shaders/src/texture_shader/shader.vert", 
+					is_arb_spirv_supported ? "shaders/bin/texture_shader/frag.spv" : "shaders/src/texture_shader/shader.frag"
+				})
+			},
+			{
+				{{0.F, 0.F, 0.F}, {0.F, 0.F, 0.F}, {3.F, 0.F, 0.F}, {-3.F, 0.F, 0.F}, {6.F, 0.F, 0.F}}
+			},
+			"assets/textures/mcgrasstexture.png"
+		);
 
-		UBO ubo(SHCONFIG_MVP_UBO_BINDING, sizeof(mat4x4)); // NOLINT
+		UBO ubo(SHCONFIG_MVP_UBO_BINDING, sizeof(UboData)); // NOLINT
 
-		sh.bind();
 		cube.bind();
 
 		float last_time{0.F};
@@ -140,6 +193,15 @@ int main() {
 			mat4x4_perspective(proj_mat, win_data.fov,
 							   static_cast<float>(w) / static_cast<float>(h),
 							   .1F, 100.F);
+			mat4x4 view_mat;
+			camera.lookAt(view_mat);
+
+			mat4x4 vp;
+			mat4x4_mul(vp, proj_mat, view_mat);
+
+			// ubo data update camera position + vp
+			vec3_dup(ubo_data.camera_pos, camera.position_);
+			mat4x4_dup(ubo_data.vp, vp);
 
 			const auto time = win.time();
 			const float timestep = time - last_time;
@@ -157,21 +219,31 @@ int main() {
 			const float z_mv = .2F * std::sin(z_angle) * timestep;
 			const auto [x_pos, y_pos, z_pos] = cube.move(x_mv, y_mv, z_mv);
 
-			mat4x4 model_mat;
-			mat4x4_translate(model_mat, 0.F + x_pos, 0.F + y_pos, 7.F + z_pos);
-			mat4x4_rotate_X(model_mat, model_mat, x_angle);
-			mat4x4_rotate_Y(model_mat, model_mat, y_angle);
-			mat4x4_rotate_Z(model_mat, model_mat, z_angle);
-			mat4x4_translate_in_place(model_mat, -.5F, -.5F, -.5F);
-			mat4x4 view_mat;
-			camera.lookAt(view_mat);
-			mat4x4 mvp;
-			mat4x4_mul(mvp, proj_mat, view_mat);
-			mat4x4_mul(mvp, mvp, model_mat);
-			ubo.sendData(static_cast<const void *>(mvp));
-			// NOLINTEND
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			for (std::size_t i{0}; i<cube.cube_count; ++i) {
+				const auto shader = cube.shaders[i];
+				const auto offset = cube.offsets[i];
 
-			cube.draw();
+				mat4x4 model_mat;
+				mat4x4_translate(model_mat, 
+					0.F /*+ x_pos*/ + offset[0], 
+					0.F /*+ y_pos*/ + offset[1], 
+					7.F /*+ z_pos*/ + offset[2]
+				);				
+				// mat4x4_rotate_X(model_mat, model_mat, x_angle);
+				// mat4x4_rotate_Y(model_mat, model_mat, y_angle);
+				// mat4x4_rotate_Z(model_mat, model_mat, z_angle);
+				mat4x4_translate_in_place(model_mat, -.5F, -.5F, -.5F);
+
+				// ubo data update model mat
+				mat4x4_dup(ubo_data.m_position, model_mat);
+
+				ubo.sendData(static_cast<const void *>(&ubo_data));
+				// NOLINTEND
+
+				shader.bind();
+				cube.draw();
+			}
 
 			win.swapBuffers();
 			win.pollEvents();
@@ -179,7 +251,6 @@ int main() {
 
 		ubo.deinit();
 		cube.deinit();
-		sh.deinit();
 		win.deinit();
 
 	} catch (std::exception &e) {

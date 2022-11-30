@@ -11,6 +11,8 @@ struct UBO {
 
 	UBO(std::uint32_t binding_location, std::int32_t size);
 	void sendData(const void *data) const;
+	void sendData(const void *data, std::int32_t offset, std::int32_t size) const;
+
 	void deinit();
 };
 

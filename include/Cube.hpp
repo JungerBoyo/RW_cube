@@ -6,7 +6,7 @@
 #include <span>
 #include <optional>
 
-#include <Shader.hpp>
+#include "Shader.hpp"
 
 namespace rw_cube {
 
@@ -18,20 +18,26 @@ struct AttribConfig {
 struct Cube {
 #include "Indices.hpp"
 #include "Vertices.hpp"
+#include "TexCoords.hpp"
+#include "Normals.hpp"
 
 	std::uint32_t vbo_id_;
 	std::uint32_t vao_id_;
-	std::uint32_t instance_count_{ 1 };
+	std::uint32_t tex_id_;
 	std::array<float, 3> rot_xyz_{{0.F, 0.F, 0.F}};
 	std::array<float, 3> pos_xyz_{{0.F, 0.F, 0.F}};
 
+	std::vector<Shader> shaders;
+	std::vector<std::array<float, 3>> offsets;
+
+	std::uint32_t cube_count{ 0 };
+
 	Cube(
 		std::uint32_t attrib_binding, 
-		std::span<const AttribConfig> attrib_configs,
-		std::optional<std::uint32_t> instance_attrib_binding,
-		std::optional<std::span<const AttribConfig>> instance_attrib_configs,
-		const void* instance_data,
-		std::uint32_t instance_data_size
+		const std::vector<AttribConfig>& attrib_configs,
+		const std::vector<Shader>& shaders,
+		const std::vector<std::array<float, 3>>& offsets,
+		const std::filesystem::path& tex_path
 	);
 	void draw() const;
 

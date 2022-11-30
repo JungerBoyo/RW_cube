@@ -1,6 +1,12 @@
 BIN_DIR = bin
 SRC_DIR = src
 
+DIFFUSE_SHADER_DIR = diffuse_shader
+LIGHT_SOURCE_SHADER_DIR = light_source_shader
+SPECULAR_SHADER_DIR = specular_shader
+PHONG_SHADER_DIR = phong_shader
+TEXTURE_SHADER_DIR = texture_shader
+
 GLSL_OPT = spirv-opt
 GLSL_OPT_FLAGS = -O
 GLSL = glslangValidator
@@ -13,6 +19,23 @@ rule mkdir
   command = mkdir -p $out
 
 build $BIN_DIR: mkdir
+build $BIN_DIR/$DIFFUSE_SHADER_DIR: mkdir | $BIN_DIR
+build $BIN_DIR/$LIGHT_SOURCE_SHADER_DIR: mkdir | $BIN_DIR
+build $BIN_DIR/$SPECULAR_SHADER_DIR: mkdir | $BIN_DIR
+build $BIN_DIR/$PHONG_SHADER_DIR: mkdir | $BIN_DIR
+build $BIN_DIR/$TEXTURE_SHADER_DIR: mkdir | $BIN_DIR
 
-build $BIN_DIR/vert.spv: glsl $SRC_DIR/shader.vert | $BIN_DIR
-build $BIN_DIR/frag.spv: glsl $SRC_DIR/shader.frag | $BIN_DIR
+build $BIN_DIR/$DIFFUSE_SHADER_DIR/vert.spv: glsl $SRC_DIR/$DIFFUSE_SHADER_DIR/shader.vert | $BIN_DIR/$DIFFUSE_SHADER_DIR
+build $BIN_DIR/$DIFFUSE_SHADER_DIR/frag.spv: glsl $SRC_DIR/$DIFFUSE_SHADER_DIR/shader.frag | $BIN_DIR/$DIFFUSE_SHADER_DIR
+
+build $BIN_DIR/$LIGHT_SOURCE_SHADER_DIR/vert.spv: glsl $SRC_DIR/$LIGHT_SOURCE_SHADER_DIR/shader.vert | $BIN_DIR/$LIGHT_SOURCE_SHADER_DIR
+build $BIN_DIR/$LIGHT_SOURCE_SHADER_DIR/frag.spv: glsl $SRC_DIR/$LIGHT_SOURCE_SHADER_DIR/shader.frag | $BIN_DIR/$LIGHT_SOURCE_SHADER_DIR
+
+build $BIN_DIR/$SPECULAR_SHADER_DIR/vert.spv: glsl $SRC_DIR/$SPECULAR_SHADER_DIR/shader.vert | $BIN_DIR/$SPECULAR_SHADER_DIR
+build $BIN_DIR/$SPECULAR_SHADER_DIR/frag.spv: glsl $SRC_DIR/$SPECULAR_SHADER_DIR/shader.frag | $BIN_DIR/$SPECULAR_SHADER_DIR
+
+build $BIN_DIR/$PHONG_SHADER_DIR/vert.spv: glsl $SRC_DIR/$PHONG_SHADER_DIR/shader.vert | $BIN_DIR/$PHONG_SHADER_DIR
+build $BIN_DIR/$PHONG_SHADER_DIR/frag.spv: glsl $SRC_DIR/$PHONG_SHADER_DIR/shader.frag | $BIN_DIR/$PHONG_SHADER_DIR
+
+build $BIN_DIR/$TEXTURE_SHADER_DIR/vert.spv: glsl $SRC_DIR/$TEXTURE_SHADER_DIR/shader.vert | $BIN_DIR/$TEXTURE_SHADER_DIR
+build $BIN_DIR/$TEXTURE_SHADER_DIR/frag.spv: glsl $SRC_DIR/$TEXTURE_SHADER_DIR/shader.frag | $BIN_DIR/$TEXTURE_SHADER_DIR

@@ -1,4 +1,5 @@
 #include "Cube.hpp"
+#include "CubeTexture.hpp"
 
 #include <cstring>
 #include <algorithm>
@@ -15,49 +16,38 @@ auto wrap(auto value, auto abs_limit, auto wrap_to) {
 
 Cube::Cube(
 	std::uint32_t attrib_binding, 
-	std::span<const AttribConfig> attrib_configs,
-	std::optional<std::uint32_t> instance_attrib_binding,
-	std::optional<std::span<const AttribConfig>> instance_attrib_configs,
-	const void* instance_data,
-	std::uint32_t instance_data_size
-) {
-	auto is_instanced = instance_attrib_binding && instance_attrib_configs && instance_data != nullptr && instance_data_size != 0;
+	const std::vector<AttribConfig>& attrib_configs,
+	const std::vector<Shader>& shaders,
+	const std::vector<std::array<float, 3>>& offsets,
+	const std::filesystem::path& tex_path
+) : shaders(shaders), offsets(offsets) {
+	cube_count = static_cast<std::uint32_t>(std::min(this->shaders.size(), this->offsets.size()));
 
 	glCreateBuffers(1, &vbo_id_);
 
+	using Vertex = std::array<float, 3 + 3 + 3>; // position + texcoord + normal
 	std::array<Vertex, INDICES.size()> vertices;
 	
-	std::array<float, 3> random_color{{0, 0, 0}};
-	std::mt19937 gen32{ static_cast<unsigned int>(time(nullptr)) }; // NOLINT
-	std::uniform_real_distribution<float> fdist(0.F, 1.F);
 	std::size_t i{0};
 	for (auto &vertex : vertices) {
-		if (i % 6 == 0) {
-			random_color[0] = fdist(gen32);
-			random_color[1] = fdist(gen32);
-			random_color[2] = fdist(gen32);
-		}
+		const auto base_vertex_index = static_cast<std::size_t>(INDICES.at(i)) * 3;
+		// set position
+		vertex[0] = VERTICES[base_vertex_index + 0];
+		vertex[1] = VERTICES[base_vertex_index + 1];
+		vertex[2] = VERTICES[base_vertex_index + 2];
 
-		const auto VERTEX = VERTICES.at(static_cast<std::size_t>(INDICES.at(i++)));
-		vertex[0] = VERTEX[0];
-		vertex[1] = VERTEX[1];
-		vertex[2] = VERTEX[2];
-		vertex[3] = random_color[0];
-		vertex[4] = random_color[1];
-		vertex[5] = random_color[2];
+		const auto in_side_texcoord_i = 2*(i % 6);
+		vertex[3] = TEX_COORDS[in_side_texcoord_i + 0];
+		vertex[4] = TEX_COORDS[in_side_texcoord_i + 1];
+		const auto face_index = i / 6;
+		vertex[5] = static_cast<float>(face_index);
+
+		vertex[6] = NORMALS[face_index * 3 + 0];
+		vertex[7] = NORMALS[face_index * 3 + 1];
+		vertex[8] = NORMALS[face_index * 3 + 2];
+		++i;
 	}
-	if (!is_instanced) {
-		glNamedBufferStorage(vbo_id_, sizeof(vertices), vertices.data(), 0);
-	} else {
-		using byte = unsigned char;
-		byte* tmp_data = new byte[sizeof(vertices) * instance_data_size];
-		memcpy(tmp_data, vertices.data(), sizeof(vertices));
-		memcpy(tmp_data + sizeof(vertices), instance_data, instance_data_size);
-
-		glNamedBufferStorage(vbo_id_, sizeof(vertices) + instance_data_size, tmp_data, 0);
-
-		delete[] tmp_data;
-	}
+	glNamedBufferStorage(vbo_id_, sizeof(vertices), vertices.data(), 0);
 
 	glCreateVertexArrays(1, &vao_id_);
 
@@ -74,19 +64,30 @@ Cube::Cube(
 	glVertexArrayBindingDivisor(vao_id_, attrib_binding, 0);
 	glVertexArrayVertexBuffer(vao_id_, attrib_binding, vbo_id_, 0, offset);
 
-	if (is_instanced) {
-		std::uint32_t instance_offset{ 0 };
-		for (const auto instance_attrib_config : instance_attrib_configs.value()) {
-			glEnableVertexArrayAttrib(vao_id_, instance_attrib_config.index);
-			glVertexArrayAttribFormat(vao_id_, instance_attrib_config.index, instance_attrib_config.size_in_dwords,
-									  GL_FLOAT, GL_FALSE, instance_offset);
-			glVertexArrayAttribBinding(vao_id_, instance_attrib_config.index, instance_attrib_binding.value());
-			instance_offset += instance_attrib_config.size_in_dwords * 4;
-		}
-		glVertexArrayBindingDivisor(vao_id_, instance_attrib_binding.value(), 1);
-		glVertexArrayVertexBuffer(vao_id_, instance_attrib_binding.value(), vbo_id_, INDICES.size() * offset, instance_offset);
-		instance_count_ = instance_data_size / instance_offset;
+	glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &tex_id_);
+	CubeTexture texture(tex_path);
+
+	const auto num_levels = static_cast<int>(std::ceil(std::log2(std::min(
+		static_cast<float>(texture.width), 
+		static_cast<float>(texture.height)
+	))));
+	glTextureStorage3D(tex_id_, num_levels, GL_RGBA8, texture.width, texture.height, 6);
+    glTextureParameteri(tex_id_, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(tex_id_, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(tex_id_, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTextureParameteri(tex_id_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	i = 0;
+	for (const auto& face_texture : texture.face_textures) {
+		glTextureSubImage3D(
+			tex_id_, 0, 0, 0, static_cast<int>(i),
+			texture.width, texture.height, 1,
+			GL_RGBA, GL_UNSIGNED_BYTE,
+			static_cast<const void*>(face_texture.data())
+		);
+		++i;
 	}
+	glGenerateTextureMipmap(tex_id_);
+	glBindTextureUnit(SHCONFIG_2D_TEX_ARRAY_BINDING, tex_id_);
 }
 
 std::tuple<float, float, float> Cube::rotate(float x, float y, float z) {
@@ -103,13 +104,15 @@ std::tuple<float, float, float> Cube::move(float x, float y, float z) {
 }
 
 void Cube::draw() const {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, INDICES.size(), instance_count_);
+	glDrawArrays(GL_TRIANGLES, 0, INDICES.size());
 }
 void Cube::bind() const {
 	glBindVertexArray(vao_id_);
 }
 void Cube::deinit() {
+	for (auto shader : shaders) {
+		shader.deinit();
+	}
 	glDeleteBuffers(1, &vbo_id_);
 	glDeleteVertexArrays(1, &vao_id_);
 }
