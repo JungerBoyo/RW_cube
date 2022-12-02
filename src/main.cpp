@@ -50,7 +50,7 @@ int main() {
 
 		Camera camera;
 		UboData ubo_data{ .light_pos = {3.5F, 0.F, 5.F}, .ambient_light = 0.2F};
-		WinData win_data = {.camera = camera, .light_pos = ubo_data.light_pos};
+		WinData win_data = { .camera = camera, .light_pos = ubo_data.light_pos};
 		win.setWinUserDataPointer(static_cast<void*>(&win_data));
 		win.setKeyCallback(+[](GLFWwindow* win_handle, int key, int, int action, int) {
 			if (action == GLFW_PRESS or action == GLFW_REPEAT) {
