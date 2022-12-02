@@ -59,6 +59,7 @@ project_options(
 ##############################
 
 ### targets ###
+add_subdirectory(assets)
 add_subdirectory(config)
 add_subdirectory(shaders)
 add_subdirectory(res)
@@ -79,6 +80,7 @@ set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "./")
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/shaders/bin DESTINATION "shaders/")
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/shaders/src DESTINATION "shaders/")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/assets/textures DESTINATION "assets/")
 
 set(CPACK_PACKAGE_FILE_NAME 
   "${PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_VERSION}-${CMAKE_BUILD_TYPE}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}"

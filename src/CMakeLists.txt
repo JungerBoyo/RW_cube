@@ -35,7 +35,7 @@ target_link_system_libraries(${PROJECT_NAME}
     linmath
 )
 
-add_dependencies(${PROJECT_NAME} compile_and_copy_shaders_dirs)
+add_dependencies(${PROJECT_NAME} compile_and_copy_shaders_dirs copy_assets)
 
 target_include_directories(${PROJECT_NAME} 
   PRIVATE 

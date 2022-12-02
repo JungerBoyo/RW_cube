@@ -87,3 +87,12 @@
 4	353	1670002929418092156	bin/diffuse_shader/frag.spv	1f54446febafbb93
 6	357	1670002929421092153	bin/specular_shader/frag.spv	1946f1c0cc8a5f5c
 5	358	1670002929422092152	bin/specular_shader/vert.spv	2e2a0c88c35aead0
+0	7	1669565929421752547	bin/diffuse_shader	586a8ef2ec60be90
+0	8	1669580760129344538	bin/light_source_shader	a775833a11e3ce93
+0	10	1669583554007049270	bin/specular_shader	ba35ec897a9ff9b2
+8	259	1670003402314190280	bin/light_source_shader/vert.spv	2d7634e12f628d86
+9	280	1670003402335190327	bin/light_source_shader/frag.spv	d3632ca23a27323c
+7	337	1670003402392190455	bin/diffuse_shader/vert.spv	a2e44f44bb14ca1c
+8	348	1670003402404190482	bin/diffuse_shader/frag.spv	1f54446febafbb93
+11	349	1670003402404190482	bin/specular_shader/vert.spv	2e2a0c88c35aead0
+12	358	1670003402413190502	bin/specular_shader/frag.spv	1946f1c0cc8a5f5c
