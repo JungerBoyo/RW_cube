@@ -1,5 +1,6 @@
 #include "Cube.hpp"
 #include "CubeTexture.hpp"
+#include "utils.hpp"
 
 #include <cstring>
 #include <algorithm>
@@ -51,26 +52,19 @@ Cube::Cube(
 
 	glCreateVertexArrays(1, &vao_id_);
 
-	std::int32_t offset{ 0 };
-	for (const auto attrib_config : attrib_configs) {
-		glEnableVertexArrayAttrib(vao_id_, attrib_config.index);
-		glVertexArrayAttribFormat(vao_id_, attrib_config.index,
-								  attrib_config.size_in_dwords, GL_FLOAT, GL_FALSE,
-								  offset);
-		glVertexArrayAttribBinding(vao_id_, attrib_config.index,
-								   attrib_binding);
-		offset += attrib_config.size_in_dwords * 4;
-	}
-	glVertexArrayBindingDivisor(vao_id_, attrib_binding, 0);
-	glVertexArrayVertexBuffer(vao_id_, attrib_binding, vbo_id_, 0, offset);
-
+	setVertexArrayLayout(
+		vao_id_,
+		vbo_id_,
+		attrib_binding,
+		attrib_configs
+	);
+	
 	glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &tex_id_);
 	CubeTexture texture(tex_path);
-
-	const auto num_levels = static_cast<int>(std::ceil(std::log2(std::min(
-		static_cast<float>(texture.width), 
-		static_cast<float>(texture.height)
-	))));
+    const auto num_levels = 1 + static_cast<std::int32_t>(std::log2(std::max(
+        static_cast<float>(texture.width), 
+        static_cast<float>(texture.height)
+    )));
 	glTextureStorage3D(tex_id_, num_levels, GL_RGBA8, texture.width, texture.height, 6);
     glTextureParameteri(tex_id_, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(tex_id_, GL_TEXTURE_WRAP_T, GL_REPEAT);

@@ -54,9 +54,10 @@ Window::Window(std::string_view title, int w, int h,
 							  GL_TRUE);
 		glDebugMessageCallback(gl_error_callback, nullptr);
 	}
-	//glClearColor(0.22F, 0.61F, 0.78F, 1.F);
+	glClearColor(0.11F, 0.31F, 0.38F, 1.F);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	//glCullFace(GL_FRONT_AND_BACK);
 }
 
 float Window::time() const {

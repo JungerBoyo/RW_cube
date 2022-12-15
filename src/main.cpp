@@ -3,6 +3,7 @@
 #include <Ubo.hpp>
 #include <Window.hpp>
 #include <Camera.hpp>
+#include <Model.hpp>
 
 #include <array>
 #include <numbers>
@@ -29,7 +30,7 @@ struct UboData {
     mat4x4 m_position;
     vec3 light_pos;
     float ambient_light;
-	vec3 camera_pos;
+	alignas(16) vec3 camera_pos;
 };
 
 int main() {
@@ -177,9 +178,14 @@ int main() {
 			"assets/textures/mcgrasstexture.png"
 		);
 
-		UBO ubo(SHCONFIG_MVP_UBO_BINDING, sizeof(UboData)); // NOLINT
+		Model gun_model(is_arb_spirv_supported, "assets/models/gun_d.obj", "assets/textures/rust_texture.png");
 
-		cube.bind();
+		UBO ubo(SHCONFIG_MVP_UBO_BINDING, sizeof(UboData) + sizeof(Model::Material)); // NOLINT
+		ubo.sendData(
+			static_cast<const void*>(&gun_model.model_material_),
+			sizeof(UboData),
+			sizeof(Model::Material)	
+		);
 
 		float last_time{0.F};
 		while (!win.shouldClose()) {
@@ -220,6 +226,7 @@ int main() {
 			const auto [x_pos, y_pos, z_pos] = cube.move(x_mv, y_mv, z_mv);
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			cube.bind();
 			for (std::size_t i{0}; i<cube.cube_count; ++i) {
 				const auto shader = cube.shaders[i];
 				const auto offset = cube.offsets[i];
@@ -238,18 +245,24 @@ int main() {
 				// ubo data update model mat
 				mat4x4_dup(ubo_data.m_position, model_mat);
 
-				ubo.sendData(static_cast<const void *>(&ubo_data));
+				ubo.sendData(static_cast<const void *>(&ubo_data), 0, sizeof(UboData));
 				// NOLINTEND
-
 				shader.bind();
 				cube.draw();
 			}
+			mat4x4 model_mat;
+			mat4x4_translate(model_mat, 2.F, 1.F, 5.F);				
+			mat4x4_dup(ubo_data.m_position, model_mat);
+			ubo.sendData(static_cast<const void *>(&ubo_data), 0, sizeof(UboData));
+			gun_model.bind();
+			gun_model.draw();
 
 			win.swapBuffers();
 			win.pollEvents();
 		}
 
 		ubo.deinit();
+		gun_model.deinit();
 		cube.deinit();
 		win.deinit();
 

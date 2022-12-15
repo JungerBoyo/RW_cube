@@ -5,15 +5,12 @@
 #include <numbers>
 #include <span>
 #include <optional>
+#include <filesystem>
+#include <utils.hpp>
 
-#include "Shader.hpp"
+#include <Shader.hpp>
 
 namespace rw_cube {
-
-struct AttribConfig {
-	std::int32_t index;
-	std::int32_t size_in_dwords;
-};
 
 struct Cube {
 #include "Indices.hpp"
@@ -21,9 +18,9 @@ struct Cube {
 #include "TexCoords.hpp"
 #include "Normals.hpp"
 
-	std::uint32_t vbo_id_;
-	std::uint32_t vao_id_;
-	std::uint32_t tex_id_;
+	std::uint32_t vbo_id_{ 0 };
+	std::uint32_t vao_id_{ 0 };
+	std::uint32_t tex_id_{ 0 };
 	std::array<float, 3> rot_xyz_{{0.F, 0.F, 0.F}};
 	std::array<float, 3> pos_xyz_{{0.F, 0.F, 0.F}};
 
