@@ -11,6 +11,7 @@ add_library(wrappers_INC
         CubeTexture.hpp
         Model.hpp
         utils.hpp
+        PseudoQuadTree.hpp
 )
 target_link_system_libraries(wrappers_INC INTERFACE glfw::glfw lodepng::lodepng)
 target_include_directories(wrappers_INC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

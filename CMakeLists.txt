@@ -12,7 +12,7 @@ include(${_project_options_SOURCE_DIR}/Index.cmake)
 
 ### set up project ###
 project(rw_cube
-  VERSION 0.0.5
+  VERSION 0.0.6
   DESCRIPTION "cube demo"
   HOMEPAGE_URL "https://github.com/JungerBoyo/RW_cube"
   LANGUAGES C CXX

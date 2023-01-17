@@ -4,9 +4,11 @@
 #include <Window.hpp>
 #include <Camera.hpp>
 #include <Model.hpp>
+#include <PseudoQuadTree.hpp>
 
 #include <array>
 #include <numbers>
+#include <algorithm>
 
 #include <fmt/format.h>
 #include <glad/glad.h>
@@ -23,6 +25,7 @@ struct WinData {
 	float fov{ std::numbers::pi_v<float>/4.F };
 	bool light_move_mode{ false };
 	float* light_pos;
+	float view_distance{ 20.F };
 };
 
 struct UboData {
@@ -107,6 +110,9 @@ int main() {
 						win_data_ptr->light_move_mode = !win_data_ptr->light_move_mode;
 					break;
 				case GLFW_KEY_Q: glfwSetWindowShouldClose(win_handle, GLFW_TRUE); break;
+				case GLFW_KEY_P: win_data_ptr->view_distance += 1.2F; break;
+				case GLFW_KEY_O: win_data_ptr->view_distance -= 
+					win_data_ptr->view_distance - 1.2F < 0.F ? 0.F : 1.2F; break;
 				default: break;
 				}
 			}
@@ -187,6 +193,59 @@ int main() {
 			sizeof(Model::Material)	
 		);
 
+		using PseudoQuadTreeType = PseudoQuadTree<Model*>;
+
+		PseudoQuadTreeType quad_tree(4U, 100.F, 100.F, 0.F, 8.F);
+		quad_tree.addToRandomLeaves(&gun_model, 1000U);
+
+		const auto tree_value_action = [&ubo, &ubo_data](const PseudoQuadTreeType::Leaf& leaf) {
+			mat4x4 model_mat;
+			mat4x4_translate(model_mat, leaf.x, 0.F, leaf.z);				
+			mat4x4_dup(ubo_data.m_position, model_mat);
+			ubo.sendData(
+				static_cast<const void *>(&ubo_data.m_position), 
+				offsetof(UboData, m_position), 
+				sizeof(UboData::m_position)
+			);
+			leaf.value->draw();
+		};
+
+		const auto tree_traversal_predicate = [&camera, &win_data](const PseudoQuadTreeType::Iterator::ValueType& value) {
+			const auto camera_x = camera.position_[0];
+			const auto camera_z = camera.position_[2];
+
+			const auto half_area_width = value.area_width/2.F;
+			const auto half_area_height = value.area_height/2.F;
+
+			const auto area_x0 = value.node.x - half_area_width;
+			const auto area_z0 = value.node.z - half_area_height;
+
+			const auto area_x1 = value.node.x + half_area_width;
+			const auto area_z1 = value.node.z + half_area_height;
+
+			if (camera_x >= area_x0 && camera_x < area_x1 &&
+				camera_z >= area_z0 && camera_z < area_z1) {
+				return true;
+			}
+
+			const float dx = std::min(
+				std::abs(camera_x - area_x0), 
+				std::abs(camera_x - area_x1)
+			);
+			const float dz = std::min(
+				std::abs(camera_z - area_z0), 
+				std::abs(camera_z - area_z1)
+			);
+
+			return std::max(dx, dz) < win_data.view_distance;
+		};
+		PseudoQuadTreeType::Iterator quad_tree_iter(
+			quad_tree, 
+			tree_value_action,
+			tree_traversal_predicate
+		);
+
+
 		float last_time{0.F};
 		while (!win.shouldClose()) {
 			const auto [w, h] = win.size();
@@ -256,6 +315,7 @@ int main() {
 			ubo.sendData(static_cast<const void *>(&ubo_data), 0, sizeof(UboData));
 			gun_model.bind();
 			gun_model.draw();
+			quad_tree_iter.depthFirstTraversal();
 
 			win.swapBuffers();
 			win.pollEvents();
